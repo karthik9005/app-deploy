@@ -1,0 +1,10 @@
+$root = "D:\ALM_Archive\Attachments"
+
+Get-ChildItem $root -File -Recurse -Force |
+  Group-Object {
+    $rel = $_.FullName.Substring($root.Length).TrimStart('\')
+    $rel.Split('\')[0]   # top folder = header
+  } |
+  Sort-Object Count -Descending |
+  Select-Object @{n="HEADER";e={$_.Name}}, @{n="ATTACHMENT_COUNT";e={$_.Count}} |
+  Format-Table -AutoSize
