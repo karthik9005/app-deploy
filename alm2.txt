@@ -1,0 +1,29 @@
+WITH obj AS (
+  SELECT owner,
+         COUNT(*) AS total_objects,
+         SUM(CASE WHEN object_type='TABLE' THEN 1 ELSE 0 END) AS tables,
+         SUM(CASE WHEN object_type='INDEX' THEN 1 ELSE 0 END) AS indexes,
+         SUM(CASE WHEN object_type='VIEW'  THEN 1 ELSE 0 END) AS views,
+         MAX(last_ddl_time) AS last_ddl_time_any_object
+  FROM all_objects
+  GROUP BY owner
+),
+tbl AS (
+  SELECT owner,
+         COUNT(*) AS table_count,
+         MAX(last_analyzed) AS last_analyzed_any_table,
+         SUM(num_rows) AS sum_num_rows_from_stats
+  FROM all_tables
+  GROUP BY owner
+)
+SELECT u.username AS schema_name,
+       u.created  AS schema_created,
+       NVL(o.total_objects, 0) AS visible_total_objects,
+       NVL(o.tables, 0)        AS visible_tables_from_all_objects,
+       NVL(t.table_count, 0)   AS visible_tables_from_all_tables,
+       t.last_analyzed_any_table,
+       o.last_ddl_time_any_object
+FROM all_users u
+LEFT JOIN obj o ON o.owner = u.username
+LEFT JOIN tbl t ON t.owner = u.username
+ORDER BY u.username;
